@@ -1,0 +1,602 @@
+---
+title: "Analysis on the Fertility Rate of South Korea"
+author: "Seunghyun(Joe) Lee"
+format: html
+editor: visual
+execute:
+  warning: false
+  echo: false
+  message: false
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(feasts)
+library(dplyr)
+library(fable)
+library(tsibble)
+library(viridis)
+library(hrbrthemes)
+library(eeptools)
+
+# Datasets
+global_crude <- read.csv("data/global_crude_br.csv")
+newborns_kr <- read.csv("data/korean_newborn_dat.csv")
+newborns_jp <- read.csv("data/japan_data.csv", header = TRUE)
+kr_female_employment <- read.csv("data/kr_women_employment.csv")
+jp_female_employment <- read.csv("data/jp_female_employment.csv")
+
+kr_pat_leave <- read.csv("data/kr_paternal_leave.csv")
+jp_pat_leave <- read.csv("data/jp_paternal_leave.csv")
+```
+
+## Declining Global Fertility Rates
+Declining birth rates impacts both developing and developed nations. In poorer countries, while fertility rates are generally higher, birth rates can still drop due to high maternal and infant mortality. Children are often needed for labor and to care for aging parents, and higher fertility is influenced by limited access to contraception and lower female education levels. Social, religious, and economic factors, along with urbanization, also play a role in birth rates. In wealthier nations, lower birth rates are tied to lifestyle choices, where the costs of raising children—such as housing and education—can be a financial burden. Additionally, women in developed countries tend to delay having children due to higher education and professional careers.
+
+
+## Declining Crude birth rates in 17 countries with advanced economies
+
+```{r}
+global_crude_br <- global_crude |> 
+  pivot_longer(
+    cols = starts_with("X"),
+    names_to = "Year",
+    values_to = "crude_birth_rate",
+    values_drop_na = TRUE
+  ) |> 
+  mutate(
+    Year = str_split_i(Year, "X",2)
+  )
+
+global_crude_br |> 
+  mutate(
+    Year = year(as.Date(Year, format = "%Y")),
+    Country = Country.Code
+  ) |> 
+  filter(Country %in% c("AUS", "KOR", "NZL", "SWE", "FRA", "GRC", "DEU", "CAN", "SGP", "ITA", "NLD", "BEL", "JPN", "GBR", "USA", "ESP")) |> 
+  select(Country, Year, crude_birth_rate) |> 
+  filter(Year >= 1990) |> 
+  ggplot(aes(x = Year, y = crude_birth_rate, color = Country)) +
+  geom_line() + labs(title = "Crude Birth Rate of 17 Advanced Economies from 1990-2023", y = "Crude Birth Rate (per 1000)") 
+```
+
+Declining birth rates are common in advanced economies, but South Korea stands out as an extreme case. It has the fastest declining birth rate and the lowest fertility rate among these nations. This makes South Korea a significant outlier in terms of population trends compared to other countries with similarly advanced economies.
+
+## Declining Birth Rates: A Social Challenge for South Korea
+
+In fact, the significant decline in birth rates remains as one of the most pressing challenges facing South Korea. **A growing population is vital for sustaining economic growth and ensuring future opportunities, especially in a country where the proportion of elderly citizens is rapidly increasing**. With the National Pension Fund for South Korea potentially being depleted within the next 30 years, it is imperative for the South Korean government to enact effective policies that encourage higher birth rates and support young families. Such measures are crucial for balancing the demographic scale and securing the nation’s long-term economic stability.
+
+
+## South Korea(KOR): Historical Crude Birth Rates
+```{r}
+# Tidying Data for Korean Birth Rate 
+newborns_kr <- newborns_kr |> 
+  pivot_longer(
+    cols = starts_with("X"),
+    names_to = "Year",
+    values_to = "data"
+  ) |> 
+  rename(data_type = `기본항목별`) |> 
+  mutate(
+    Year = str_split_i(Year, "X",2)
+  ) 
+
+newborns_kr <- newborns_kr |> 
+  pivot_wider(
+    names_from = data_type,
+    values_from = data
+  )
+
+# Converting Korean inputted columns into its English Equivalent
+newborns_kr <- newborns_kr |> 
+  rename(New_Births = `출생아수(명)`,
+         Total_Population_Change = `자연증가건수(명)`,
+         Crude_Birth_Rate_per_1000 = `조출생률(천명당)`,
+         Total_Population_Change_per_1000 = `자연증가율(천명당)`,
+         Total_Fertility_Rate = `합계출산율(명)`,
+         Birth_Sex_Ratio = `출생성비(명)`)
+
+# Adjust New Births number into thousands, instead of raw number
+newborns_kr_ts <- newborns_kr |> 
+  mutate(Year = year(as.Date(Year, format = "%Y"))) |> 
+  mutate(New_Births = New_Births/1e3) # divide by to make it per 1000
+
+# Create tsibble object from tibble 
+newborns_kr_ts <- as_tsibble(newborns_kr_ts, index = Year) |>
+  arrange(Year)
+
+# Initial Exploration through visualization 
+newborns_kr_ts |> 
+  autoplot(Crude_Birth_Rate_per_1000) +
+  geom_vline(xintercept = c(1979, 1982), color = "lightgreen") + 
+  geom_vline(xintercept = 1990, color = "lightblue") +
+  geom_vline(xintercept = 2000, color = "orange") + 
+  labs(title = "Crude Birth Rate in South Korea from 1970-2023",
+       x ="Year", y = "Crude Birth Rate (per 1000)") + theme_classic()
+```
+
+In the initial data visualization of birth rates, clear breakpoints are observed, influenced by government policies. **Between 1979 and 1982 (Green), the South Korean government implemented a one-child policy, leading to a sharp decline in birth rates in the following years**. However, due to the rapid population decrease, the **government reversed this policy beginning in 1990 (Blue), resulting in a slight increase in birth rates for a few years**. Despite the changes, the birth rate continued to decline thereafter. **The year 2000 (Orange) marks what some refer to as South Korea’s “demographic cliff”** (a term popularized by Harry S. Dent), characterized by a rapid decline in the working-age population. This shift is often attributed to changing social norms, where the desire to have larger families has decreased, coupled with the effects of technological modernization.
+
+## Similarities between South Korea(KOR) and Japan(JPN)
+
+Japan and South Korea are often compared in terms of birth rates because Japan once held the position of having the fastest declining birth rate, a trend that has recently begun to slow. By examining how Japan managed to reduce its trend of its declining birth rate, it may be possible to identify policies or societal changes that could help South Korea alter its current trajectory. 
+
+```{r}
+# Tidying Data for Japanese Birth Rate 
+newborns_jp <- newborns_jp |> 
+  filter(1970 <= date & date <= 2024)
+
+newborns_jp_ts <- newborns_jp |> 
+  mutate(Year = year(as.Date(date, format = "%Y"))) |> 
+  select(Year, Births.per.1000.People) |> 
+  rename(Crude_Birth_Rate_per_1000_jp = Births.per.1000.People)
+
+newborns_jp_ts <- as_tsibble(newborns_jp_ts, index = Year) |>
+  arrange(Year) 
+
+newborns_total <- newborns_jp_ts |> 
+  left_join(newborns_kr_ts) |> 
+  select(Year, Crude_Birth_Rate_per_1000_jp, Crude_Birth_Rate_per_1000) |> 
+  rename(Crude_Birth_Rate_per_1000_kr = Crude_Birth_Rate_per_1000)
+
+# Time series plotting for comparison
+ggplot(newborns_total, aes(x = Year, aes(country))) +
+  geom_line(aes(y = Crude_Birth_Rate_per_1000_kr, color = "South Korea")) + 
+  geom_line(aes(y = Crude_Birth_Rate_per_1000_jp, color = "Japan")) + 
+  labs(title = "Crude Birth Rate for KOR and JPN during 1970-2023", color = "Country", y = "Crude Birth Rate per 1000") 
+```
+Both Japan and South Korea have experienced declining birth rates, but over the past 20 years, Japan’s decline has slowed, while South Korea’s has become much more rapid. To better understand the current patterns in each country, it is useful to decompose the birth rate series into its underlying trends.
+
+```{r}
+newborns_jp_stl <- newborns_jp_ts |> 
+  model(
+    jp_STL = STL(Crude_Birth_Rate_per_1000_jp, robust = TRUE),
+  ) |> 
+  components()
+
+newborns_kr_stl <- newborns_kr_ts |> 
+  model(
+    kr_STL = STL(Crude_Birth_Rate_per_1000, robust = TRUE),
+  ) |> 
+  components() 
+
+newborns_stl <- newborns_jp_stl |> 
+  left_join(newborns_kr_stl, by = "Year") |> 
+  rename(Crude_Birth_Rate_per_1000_kr = Crude_Birth_Rate_per_1000,
+         jp_trend = trend.x,
+         kr_trend = trend.y)
+
+ggplot(newborns_stl, aes(x = Year, aes(country))) +
+  geom_line(aes(y = Crude_Birth_Rate_per_1000_jp), color = "gray")+ 
+  geom_line(aes(y = Crude_Birth_Rate_per_1000_kr), color = "gray")+ 
+  geom_line(aes(y = jp_trend, color = "Japan")) + 
+  geom_line(aes(y = kr_trend, color = "South Korea")) + 
+  labs(title = "Crude Birth Rate Trends for KOR and JPN from STL decomposition", color = "Country", y = "Crude Birth Rate Trend") 
+
+newborns_stl |> select(Year, jp_trend, kr_trend) |> 
+  filter(Year > 1990)
+```
+
+In fact, when we decompose using Seasonal-Trend by Loess decomposition, the model does not identify a seasonal component but only the trend component and its remainder.
+
+```{r}
+# ETS (A,A,N) models for observing historical trends
+newborns_jp_decomp <- newborns_jp_ts |> 
+  model(
+    jp_AAN = ETS(Crude_Birth_Rate_per_1000_jp ~ error("A") + trend("A") + season("N"))
+  ) |> 
+  components()
+
+newborns_kr_decomp <- newborns_kr_ts |> 
+  model(
+    kr_AAN = ETS(Crude_Birth_Rate_per_1000 ~ error("A") + trend("A") + season("N"))
+  ) |> 
+  components() 
+
+newborns_jp_decomp |> 
+  left_join(newborns_kr_decomp, by = "Year") |> 
+  rename(jp_slope = slope.x,
+         kr_slope = slope.y) |> 
+  ggplot(aes(x = Year)) + 
+  geom_line(aes(y = jp_slope, color = "Japan")) + 
+  geom_line(aes(y = kr_slope, color = "South Korea")) + 
+  labs(y = "Trend Component from ETS decomposition")
+
+```
+
+Observation of the historical birth rate trends allows us to clearly see Japan's slowing trend for the decrease in birth rates while the birth rate for Korea has a historical trend of decreasing constantly since 1970.  
+
+```{r}
+# ETS (A,A,N) models for observing historical trends
+newborns_kr_ts |> 
+  model(
+    kr_AAN = ETS(Crude_Birth_Rate_per_1000 ~ error("A") + trend("A") + season("N"))
+  ) |> 
+  report()
+
+```
+Where this model can be written down as an ETS(A,A,N) model, as below. 
+$$
+\hat{y}_{t +h |t} = l_{t} + hb_{t}
+$$
+$$
+l_{t} = 0.979989y_{t} + (0.020011)(l_{t -1} + b_{t-1})
+$$
+$$
+b_{t} = b_{t-1}
+$$
+The alpha value close to 1 and the beta value being close to 0 suggests a strong trend, where the change in levels are dependent heavily on the trend, which was intially negative. 
+
+
+```{r}
+# Scatterplot for relationships
+ggplot(newborns_total, aes(x = Crude_Birth_Rate_per_1000_kr, y = Crude_Birth_Rate_per_1000_jp)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", se = FALSE) + labs(title = "Scatterplot between Crude Birth Rate between Japan and South Korea", x = "Crude Birth Rate per 1000 for KOR", y = "Crude Birth Rate per 1000 for JPN")
+
+newborns_total |> 
+  model(TSLM(Crude_Birth_Rate_per_1000_kr ~ Crude_Birth_Rate_per_1000_jp)) |> 
+  report()
+```
+There appears to be a correlation in the historical crude birth rates between the two countries, suggesting that further discussions between them could be beneficial.
+
+## Female Employment, Dual Income, and Paternal Leave in South Korea(KOR) and Japan(JPN)
+
+This analysis focuses on female employment rates in both countries, specifically examining women pursuing careers and participating in the workforce.
+
+```{r}
+kr_fm_emp <- kr_female_employment |> 
+  select(ends_with(".7")) |> 
+  slice(4:4) |> 
+  pivot_longer(
+  cols = starts_with("X"),
+  names_to = "Year",
+  values_to = "kr_female_employment_rate"
+  ) |> 
+  mutate(
+    Year = str_split_i(Year, "X",2),
+    Year = str_split_i(Year, "\\.", 1),
+    Year = year(as.Date(Year, format = "%Y")),
+    kr_female_employment_rate = as.numeric(kr_female_employment_rate)
+  ) |> 
+  as_tsibble(index = Year)
+
+jp_fm_emp <- jp_female_employment |> 
+  select(Year, Female) |> 
+  mutate(
+    Year = str_split_i(Year, "\\*",1),
+    Year = year(as.Date(Year, format = "%Y"))
+  ) |> 
+  rename(
+    jp_female_employment_rate = Female
+  ) |> 
+  as_tsibble(index = Year) |> 
+  filter(Year >= 2000)
+
+merged_fm_emp <- kr_fm_emp |> 
+  left_join(jp_fm_emp, by = "Year")
+
+ggplot(merged_fm_emp, aes(x = Year, aes(country))) +
+  geom_line(aes(y = jp_female_employment_rate, color = "Japan")) + 
+  geom_line(aes(y = kr_female_employment_rate, color = "South Korea")) + 
+  labs(title = "Female Employment Rate for KOR and JPN from 2000 - 2023", color = "Country", y = "Female Employment Rate (%)")
+```
+
+Female employment has risen in both countries, yet Japan’s birth rate decline is slower than Korea’s. While it was assumed that female employment may lead to similar trends, Korea’s birth rate continues to decline more sharply than Japan’s.
+
+```{r}
+jp_pat_leave_ts <- jp_pat_leave |> 
+  select(Year, Male, Female) |> 
+  mutate(
+    Year = as.numeric(Year),
+    )|> 
+  as_tsibble(index = Year) |> 
+  pivot_longer(
+    cols = !Year,
+    names_to = "Gender"
+  ) |> 
+  rename(
+    Leave_Rate = value
+  )
+
+kr_pat_leave_ts <- kr_pat_leave |> 
+  rename(
+    Male = Fathers,
+    Female = Mothers,
+  ) |> 
+  mutate(
+    Year = str_split_i(Year, "\\*",1),
+    Year = year(as.Date(Year, format = "%Y"))
+  )|> 
+  select(Year, Female, Male) |> 
+  as_tsibble(index = Year) |> 
+  pivot_longer(
+    cols = !Year,
+    names_to = "Gender"
+  ) |> 
+  rename(
+    Leave_Rate = value
+  ) 
+```
+
+
+```{r}
+jp_pat_leave_adj_ts <- jp_pat_leave_ts |> 
+  filter(Year >= 2013)
+
+merged_pat_leave <- kr_pat_leave_ts |> 
+  left_join(jp_pat_leave_adj_ts, by = c("Year","Gender")) |> 
+  rename(
+    leave_rate_kr = Leave_Rate.x,
+    leave_rate_jp = Leave_Rate.y
+  )
+
+merged_pat_leave |> 
+  filter(Gender == "Female") |> 
+  ggplot(aes(x = Year, aes(country))) + 
+  geom_line(aes(y = leave_rate_jp, color = "Japan")) + 
+  geom_line(aes(y = leave_rate_kr, color = "South Korea")) + 
+  labs(title = "Female Paternal Leave Rates from 2013-2022", y = "Leave Rate (%)") + 
+  scale_x_continuous(breaks = ~ axisTicks(., log = FALSE)) +
+  theme_ipsum() 
+
+merged_pat_leave |>  
+  rename(
+    Korea = leave_rate_kr,
+    Japan = leave_rate_jp
+  ) |> 
+  pivot_longer(
+    cols = !Year & !Gender,
+    names_to = "Country"
+  ) |> 
+  rename(
+    Leave_Rate = value
+  ) |> 
+  ggplot(aes(x = Year, color = Country)) + 
+  facet_wrap(vars(Gender, Country)) + 
+  geom_line(aes(y = Leave_Rate)) + 
+  scale_x_continuous(breaks = ~ axisTicks(., log = FALSE)) +
+  labs(title = "Paternal Leave Rates from 2013-2022 for KOR and JPN", y = "Leave Rate (%)", x = "") + 
+  theme_ipsum() 
+```
+
+However, **Japan has much higher paternal leave rates compared to Korea, for both men and women**. The availability of paternal leave may support women in continuing their careers while encouraging earlier childbirth. Therefore, policies that support child care and pregnant women could be a key factor. Additionally, Japan’s higher paternal leave rates for men suggest that male involvement in childcare could have an impact in supporting birth rates.
+
+
+
+```{r}
+jp_childcare <- read.csv("data/jp_childcare.csv")
+
+
+jp_childcare <- jp_childcare |> 
+  slice(3:n()) |> 
+  rename(
+    Year = X,
+    Government_Run = X.1,
+    Early_Childhood_Center = X.2,
+    Kindergarden = X.3,
+    Community_Based = X.4
+  )
+
+jp_childcare <- jp_childcare |> 
+  mutate(
+    Year = Year,
+    Government_Run = decomma(Government_Run),
+    Early_Childhood_Center = decomma(Early_Childhood_Center),
+    Kindergarden = decomma(Kindergarden),
+    Community_Based = decomma(Community_Based)
+  ) |> 
+  mutate(
+    Total = Government_Run + Early_Childhood_Center + Kindergarden + Community_Based,
+    New_Initiative = Early_Childhood_Center + Community_Based,
+    Year = as.numeric(Year)
+  ) |> 
+  as_tsibble(index = Year)
+    
+jp_childcare_ts <- jp_childcare |> 
+  pivot_longer(
+    cols = !Year,
+    names_to = "Type",
+    values_to = "Count"
+  )
+
+jp_childcare_ts |> 
+  group_by(Type) |> 
+  filter(
+    Type == c("Total", "New_Initiative", "Government_Run")
+  ) |> 
+  ggplot(aes(x = Year, y = Count)) +
+  geom_line() +
+  facet_wrap(~Type) + 
+  labs(title = "Number of Child Care Facilities in Japan from 2014 to 2023", y = "Number of facilities (in thousands)") + 
+  theme_ipsum() 
+
+jp_childcare_ts |> 
+  filter(Type %in% c("Early_Childhood_Center", "Community_Based", "Government_Run")) |> 
+  ggplot(aes(x = Year, y = Count, fill = Type)) + 
+  geom_area() + 
+  scale_x_continuous(breaks = ~ axisTicks(., log = FALSE)) + 
+  labs(title = "Number of Child Care Facilities in Japan from 2014 to 2023 by childcare", y = "Number of facilities (in thousands)") + 
+  theme_ipsum() 
+```
+The availability of child care facilities shows a different trend as well. While government-run facilities have remained relatively unchanged, Japan has introduced new community-based and integrated child care centers, with annual increases as part of its 5-Year Plan to expand child care capacity, started in 2014.
+```{r}
+kr_childcare <- read.csv("data/kr_childcare.csv")
+
+kr_childcare_ts <- kr_childcare |> 
+  pivot_longer(
+    cols = starts_with("X"),
+    names_to = "Year",
+    values_to = "data"
+  )
+
+kr_childcare_num <- kr_childcare_ts |> 
+  mutate(
+    num = as.numeric(data)
+  ) |> 
+  select(Year, num) |> 
+  slice(273:n())
+  
+kr_childcare_ts <- kr_childcare_ts |> 
+  slice(1:272)
+
+kr_childcare_ts <- kr_childcare_ts |> 
+  left_join(kr_childcare_num, by = "Year") |> 
+  mutate(
+    Year = str_split_i(Year, "X",2),
+    Year = str_split_i(Year, "\\.",1),
+    Year = year(as.Date(Year, format = "%Y"))
+  ) |> 
+  rename(
+    Type = data,
+    Count = num
+  )
+
+kr_childcare_ts |> 
+  replace_na(list(Count = 0)) |> 
+  mutate(Type = ifelse(Type == "합계", "Total", Type),
+         Type = ifelse(Type == "국·공립", "Government_Run", Type),
+         Type = ifelse(Type == "민간", "Private", Type),
+         Type = ifelse(Type == "가정", "Private", Type),
+         Type = ifelse(Type == "직장", "Workplace", Type),
+         ) |> 
+  group_by(Type) |> 
+  filter(
+    Type == c("Total", "Government_Run", "Private", "Workplace")
+  ) |> 
+  ggplot(aes(x = Year, y = Count)) +
+  geom_line() +
+  facet_wrap(~Type) + 
+  labs(title = "Number of Child Care Facilities in Korea from 1990 to 2023", y = "Number of facilities") + 
+  theme_ipsum() 
+```
+South Korea has been expanding government-run child care facilities, but the growth is slow, and privately run centers are declining. Additionally, workplace child care environments have not significantly improved over the past 20 years, resulting in an overall reduction in the total number of facilities.
+
+Observing these trends, paternal leave proportions and child care availability may help identify ways to improve South Korea’s birth rate. These factors can also be used to forecast future birth rates. Current policy aims to add 500 child care facilities annually. However, as paternal leave legislation is determined by individual companies, we can assume that current leave trends will remain unchanged.
+
+After fitting a multi-linear regression model with these trends, the p-value for the total number of healthcare facilities was not significant. Therefore, the model incorporates only the parental leave rates for both women and men as explanatory variables, along with a trend component. The best-fitted linear model, which minimizes the mean squared error (MSE) from cross-validation, is as follows at a 95% confidence level.
+
+$$
+y_{t} = -1.470668 + 0.052485*leave_{women} + -0.049992*leave_{men} -0.108774*trend + \epsilon_{t}
+$$
+The model suggests that an **increase in maternity leave could positively impact the birth rate**. However, current trends indicate that other factors—captured by the trend-has double the effect, being the largest contributors to the declining birth rate.
+
+To stabilize the birth rate, it is important to set **higher targets for maternity leave percentages**. Using the model, we can generate scenario-based forecasts for South Korea’s birth rate by 2030, considering current trends in paternity leave.
+
+```{r}
+kr_pat_leave_ts_reg_fm <- kr_pat_leave_ts |> 
+  filter(Gender == "Female") |> 
+  select(Year, Leave_Rate)
+  
+kr_pat_leave_ts_reg_ml <- kr_pat_leave_ts |> 
+  filter(Gender == "Male")|> 
+  select(Year, Leave_Rate)
+
+newborns_kr_ts_reg <- newborns_kr_ts  |> 
+  select(Year, Total_Fertility_Rate) |> 
+  filter(Year >= 2013 & Year <= 2022)
+
+newborns_kr_ts_reg <- newborns_kr_ts_reg |> 
+  left_join(kr_pat_leave_ts_reg_fm, by = "Year") |> 
+  left_join(kr_pat_leave_ts_reg_ml, by = "Year") |> 
+  rename(
+    fm_leave = Leave_Rate.x,
+    ml_leave = Leave_Rate.y,
+  )
+
+fit_birthrate <- newborns_kr_ts_reg |> 
+  model(
+    lm = TSLM(Total_Fertility_Rate ~ fm_leave + ml_leave + trend()),
+  ) 
+
+report(fit_birthrate)
+
+fm_leave_trend <- kr_pat_leave_ts_reg_fm |> 
+  model(
+    TSLM(Leave_Rate ~ trend())
+  ) |> 
+  generate(h = 10)
+
+ml_leave_trend <- kr_pat_leave_ts_reg_ml |> 
+  model(
+    TSLM(Leave_Rate ~ trend())
+  ) |> 
+  generate(h = 10)
+
+
+fm_leave_trend <- fm_leave_trend |> 
+  select(.sim) |> 
+  rename(
+    fm_leave = .sim
+  )
+
+ml_leave_trend <- ml_leave_trend |> 
+  select(.sim) |> 
+  rename(
+    ml_leave = .sim
+  )
+
+sce <- scenarios(
+  leave_trend = new_data(newborns_kr_ts_reg, 10) |> 
+    mutate(
+      fm_leave = fm_leave_trend$fm_leave, 
+      ml_leave = ml_leave_trend$ml_leave, 
+           ))
+
+fc_birthrate <- forecast(fit_birthrate, new_data = sce)
+
+newborns_kr_ts_reg |> 
+  autoplot(Total_Fertility_Rate) + 
+  autolayer(fc_birthrate) + 
+  theme_ipsum() + 
+  labs(title = "10 Year forecasts of fertility rates for South Korea", y = "Fertility Rate")
+
+```
+
+If we set a **goal of achieving an 84.5% maternity leave rate by 2023**, the birth rate forecasts become more optimistic, with potential fertility rate increases around 2030. This scenario could result in a total fertility rate of 0.51 by 2030, compared to 0.42 in the previous forecast—an approximate 20% improvement.
+
+```{r}
+fm_leave_trend <- kr_pat_leave_ts_reg_fm |> 
+  model(
+    RW(Leave_Rate ~ drift())
+  ) |> 
+  generate(h = 10, bootstrap = TRUE)
+
+ml_leave_trend <- kr_pat_leave_ts_reg_ml |> 
+  model(
+    TSLM(Leave_Rate ~ trend())
+  ) |> 
+  generate(h = 10, bootstrap = TRUE)
+
+
+fm_leave_trend <- fm_leave_trend |> 
+  select(.sim) |> 
+  rename(
+    fm_leave = .sim
+  )
+
+ml_leave_trend <- ml_leave_trend |> 
+  select(.sim) |> 
+  rename(
+    ml_leave = .sim
+  )
+
+sce <- scenarios(
+  leave_trend = new_data(newborns_kr_ts_reg, 10) |> 
+    mutate(
+      fm_leave = fm_leave_trend$fm_leave, 
+      ml_leave = ml_leave_trend$ml_leave, 
+           ))
+
+fc_birthrate <- forecast(fit_birthrate, new_data = sce)
+
+newborns_kr_ts_reg |> 
+  autoplot(Total_Fertility_Rate) + 
+  autolayer(fc_birthrate) + 
+  theme_ipsum()
+  
+```
+## Conclusion
+
+South Korea’s declining fertility rate is driven by socio-economic and policy factors, particularly inadequate child care support and lower paternal leave rates. Compared to Japan, there is room for improvement in child care and higher paternal leave rates, as it has slowed its birth rate decline. South Korea continues to struggle. A multi-linear model that fits paternal leaves as an explanatory variable suggests that increasing maternity leave to 84.5% by 2023 could improve South Korea’s fertility rate by 20%, reaching approximately 0.51 by 2030. To reverse the trend, South Korea must prioritize enhanced child support policies, especially around child care and parental leave.

@@ -1,0 +1,7 @@
+project:
+  title: "Analysis on the Fertility Rate of South Korea"
+  type: website
+  output-dir: docs
+
+editor: visual
+
