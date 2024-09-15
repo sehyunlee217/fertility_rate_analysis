@@ -13,7 +13,7 @@
 **Multi-Regression Modeling**:
 - Multi-linear regression model incorporating parental leave rates and trend components.
 - Forecasting future fertility rates based on different policy scenarios.
-- Multi-regression model performed better than MA(1) model with 1 differencing; equivalent to ARIMA(0,2,1) for leave-one-out cross validation on all CV criterias(RMSE, MAPE, RMSEE). 
+- Multi-regression model performed better than MA(1) model with 1 differencing; equivalent to ARIMA(0,2,1) for rolling forecast origin cross validation on all CV criterias(RMSE, MAPE, RMSEE). 
 
 ## Main Findings
 - South Korea’s birth rate is declining faster than Japan’s, despite similar female employment trends.
