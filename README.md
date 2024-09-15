@@ -13,7 +13,7 @@
 **Multi-Regression Modeling**:
 - Multi-linear regression model incorporating parental leave rates and trend components.
 - Forecasting future fertility rates based on different policy scenarios.
-- Adjusted R^2 Value of 0.983, MAE:0.0146, MAPE: 1.46, RMSSE: 0.277
+- Multi-regression model performed better than MA(1) model with 1 differencing; equivalent to ARIMA(0,2,1) for leave-one-out cross validation on all CV criterias(RMSE, MAPE, RMSEE). 
 
 ## Main Findings
 - South Korea’s birth rate is declining faster than Japan’s, despite similar female employment trends.
