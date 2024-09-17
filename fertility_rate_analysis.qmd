@@ -475,6 +475,10 @@ Observing these trends, paternal leave proportions and child care availability m
 
 After fitting a multi-linear regression model with these trends, the p-value for the total number of healthcare facilities was not significant at the 95% level. Therefore, the model incorporates only the parental leave rates for both women and men as explanatory variables, along with a trend component. The best-fitted multi-linear regression model, which minimizes the error for rolling forecast origin cross-validation, is as follows.
 
+$$
+y_{t} = -1.470668 + 0.052485*leave_{women} + -0.049992*leave_{men} -0.108774*trend + \epsilon_{t}
+$$
+
 ```{r}
 kr_childcare_ts_reg <- kr_childcare_ts |> 
   replace_na(list(Count = 0)) |> 
@@ -518,10 +522,6 @@ report(fit_birthrate)
 
 
 ```
-
-$$
-y_{t} = -1.470668 + 0.052485*leave_{women} + -0.049992*leave_{men} -0.108774*trend + \epsilon_{t}
-$$
 
 \
 We can compare this model to an Moving Average model, which captures lagged values to generate forecasts, the multi-linear model out-performed the MA(2) model with differencing \[ i.e ARIMA(0,1,2) \] in RMSE, MAE, and MAPE.

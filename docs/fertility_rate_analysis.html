@@ -332,6 +332,9 @@ F-statistic: 658.4 on 1 and 52 DF, p-value: &lt; 2.22e-16</code></pre>
 <p>South Korea has been expanding government-run child care facilities, but the growth is slow, and privately run centers are declining. Additionally, workplace child care environments have not significantly improved over the past 20 years, resulting in an overall reduction in the total number of facilities.</p>
 <p>Observing these trends, paternal leave proportions and child care availability may help identify ways to improve South Korea’s birth rate. These factors can also be used to forecast future birth rates. Current policy aims to add 500 child care facilities annually. However, as paternal leave legislation is determined by individual companies, we can assume that current leave trends will remain unchanged.</p>
 <p>After fitting a multi-linear regression model with these trends, the p-value for the total number of healthcare facilities was not significant at the 95% level. Therefore, the model incorporates only the parental leave rates for both women and men as explanatory variables, along with a trend component. The best-fitted multi-linear regression model, which minimizes the error for rolling forecast origin cross-validation, is as follows.</p>
+<p><span class="math display">\[
+y_{t} = -1.470668 + 0.052485*leave_{women} + -0.049992*leave_{men} -0.108774*trend + \epsilon_{t}
+\]</span></p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code>Series: Total_Fertility_Rate 
@@ -354,9 +357,6 @@ Multiple R-squared: 0.9913, Adjusted R-squared: 0.9843
 F-statistic: 142.3 on 4 and 5 DF, p-value: 2.459e-05</code></pre>
 </div>
 </div>
-<p><span class="math display">\[
-y_{t} = -1.470668 + 0.052485*leave_{women} + -0.049992*leave_{men} -0.108774*trend + \epsilon_{t}
-\]</span></p>
 <p><br>
 We can compare this model to an Moving Average model, which captures lagged values to generate forecasts, the multi-linear model out-performed the MA(2) model with differencing [ i.e ARIMA(0,1,2) ] in RMSE, MAE, and MAPE.</p>
 <div class="cell">
