@@ -32,8 +32,8 @@ jp_pat_leave <- read.csv("data/jp_paternal_leave.csv")
 ```
 
 ## Declining Global Fertility Rates
-Declining birth rates impacts both developing and developed nations. In poorer countries, while fertility rates are generally higher, birth rates can still drop due to high maternal and infant mortality. Children are often needed for labor and to care for aging parents, and higher fertility is influenced by limited access to contraception and lower female education levels. Social, religious, and economic factors, along with urbanization, also play a role in birth rates. In wealthier nations, lower birth rates are tied to lifestyle choices, where the costs of raising children—such as housing and education—can be a financial burden. Additionally, women in developed countries tend to delay having children due to higher education and professional careers.
 
+Declining birth rates impacts both developing and developed nations. Social, religious, and economic factors, along with urbanization, play a role in birth rates. In wealthier nations, lower birth rates are tied to lifestyle choices, where the costs of raising children—such as housing and education—can be a financial burden. Additionally, women in developed countries tend to delay having children due to higher education and professional careers.
 
 ## Declining Crude birth rates in 17 countries with advanced economies
 
@@ -61,14 +61,14 @@ global_crude_br |>
   geom_line() + labs(title = "Crude Birth Rate of 17 Advanced Economies from 1990-2023", y = "Crude Birth Rate (per 1000)") 
 ```
 
-Declining birth rates are common in advanced economies, but South Korea stands out as an extreme case. It has the fastest declining birth rate and the lowest fertility rate among these nations. This makes South Korea a significant outlier in terms of population trends compared to other countries with similarly advanced economies.
+Declining birth rates are common in advanced economies, but South Korea stands out as an extreme case. It has the fastest declining birth rate and the lowest fertility rate among these nations. This makes South Korea an outlier in terms of population trends compared to other countries with similarly advanced economies.
 
 ## Declining Birth Rates: A Social Challenge for South Korea
 
 In fact, the significant decline in birth rates remains as one of the most pressing challenges facing South Korea. **A growing population is vital for sustaining economic growth and ensuring future opportunities, especially in a country where the proportion of elderly citizens is rapidly increasing**. With the National Pension Fund for South Korea potentially being depleted within the next 30 years, it is imperative for the South Korean government to enact effective policies that encourage higher birth rates and support young families. Such measures are crucial for balancing the demographic scale and securing the nation’s long-term economic stability.
 
-
 ## South Korea(KOR): Historical Crude Birth Rates
+
 ```{r}
 # Tidying Data for Korean Birth Rate 
 newborns_kr <- newborns_kr |> 
@@ -120,7 +120,7 @@ In the initial data visualization of birth rates, clear breakpoints are observed
 
 ## Similarities between South Korea(KOR) and Japan(JPN)
 
-Japan and South Korea are often compared in terms of birth rates because Japan once held the position of having the fastest declining birth rate, a trend that has recently begun to slow. By examining how Japan managed to reduce its trend of its declining birth rate, it may be possible to identify policies or societal changes that could help South Korea alter its current trajectory. 
+Japan and South Korea are often compared in terms of birth rates because Japan once held the position of having the fastest declining birth rate, a trend that has recently begun to slow. By examining how Japan managed to reduce its trend of its declining birth rate, it may be possible to identify policies or societal changes that could help South Korea alter its current trajectory.
 
 ```{r}
 # Tidying Data for Japanese Birth Rate 
@@ -146,6 +146,7 @@ ggplot(newborns_total, aes(x = Year, aes(country))) +
   geom_line(aes(y = Crude_Birth_Rate_per_1000_jp, color = "Japan")) + 
   labs(title = "Crude Birth Rate for KOR and JPN during 1970-2023", color = "Country", y = "Crude Birth Rate per 1000") 
 ```
+
 Both Japan and South Korea have experienced declining birth rates, but over the past 20 years, Japan’s decline has slowed, while South Korea’s has become much more rapid. To better understand the current patterns in each country, it is useful to decompose the birth rate series into its underlying trends.
 
 ```{r}
@@ -205,7 +206,7 @@ newborns_jp_decomp |>
 
 ```
 
-Observation of the historical birth rate trends allows us to clearly see Japan's slowing trend for the decrease in birth rates while the birth rate for Korea has a historical trend of decreasing constantly since 1970.  
+Observation of the historical birth rate trends allows us to clearly see Japan's slowing trend for the decrease in birth rates while the birth rate for Korea has a historical trend of decreasing constantly since 1970.
 
 ```{r}
 # ETS (A,A,N) models for observing historical trends
@@ -216,18 +217,14 @@ newborns_kr_ts |>
   report()
 
 ```
-Where this model can be written down as an ETS(A,A,N) model, as below. 
-$$
-\hat{y}_{t +h |t} = l_{t} + hb_{t}
-$$
-$$
-l_{t} = 0.979989y_{t} + (0.020011)(l_{t -1} + b_{t-1})
-$$
-$$
-b_{t} = b_{t-1}
-$$
-The alpha value close to 1 and the beta value being close to 0 suggests a strong trend, where the change in levels are dependent heavily on the trend, which was intially negative. 
 
+Where this model can be written down as an ETS(A,A,N) model, as below. $$
+\hat{y}_{t +h |t} = l_{t} + hb_{t}
+$$ $$
+l_{t} = 0.979989y_{t} + (0.020011)(l_{t -1} + b_{t-1})
+$$ $$
+b_{t} = b_{t-1}
+$$ The alpha value close to 1 and the beta value being close to 0 suggests a strong trend, where the change in levels are dependent heavily on the trend, which was intially negative.
 
 ```{r}
 # Scatterplot for relationships
@@ -239,6 +236,7 @@ newborns_total |>
   model(TSLM(Crude_Birth_Rate_per_1000_kr ~ Crude_Birth_Rate_per_1000_jp)) |> 
   report()
 ```
+
 There appears to be a correlation in the historical crude birth rates between the two countries, suggesting that further discussions between them could be beneficial.
 
 ## Female Employment, Dual Income, and Paternal Leave in South Korea(KOR) and Japan(JPN)
@@ -320,7 +318,6 @@ kr_pat_leave_ts <- kr_pat_leave |>
   ) 
 ```
 
-
 ```{r}
 jp_pat_leave_adj_ts <- jp_pat_leave_ts |> 
   filter(Year >= 2013)
@@ -362,8 +359,6 @@ merged_pat_leave |>
 ```
 
 However, **Japan has much higher paternal leave rates compared to Korea, for both men and women**. The availability of paternal leave may support women in continuing their careers while encouraging earlier childbirth. Therefore, policies that support child care and pregnant women could be a key factor. Additionally, Japan’s higher paternal leave rates for men suggest that male involvement in childcare could have an impact in supporting birth rates.
-
-
 
 ```{r}
 jp_childcare <- read.csv("data/jp_childcare.csv")
@@ -420,7 +415,9 @@ jp_childcare_ts |>
   labs(title = "Number of Child Care Facilities in Japan from 2014 to 2023 by childcare", y = "Number of facilities (in thousands)") + 
   theme_ipsum() 
 ```
+
 The availability of child care facilities shows a different trend as well. While government-run facilities have remained relatively unchanged, Japan has introduced new community-based and integrated child care centers, with annual increases as part of its 5-Year Plan to expand child care capacity, started in 2014.
+
 ```{r}
 kr_childcare <- read.csv("data/kr_childcare.csv")
 
@@ -471,15 +468,76 @@ kr_childcare_ts |>
   labs(title = "Number of Child Care Facilities in Korea from 1990 to 2023", y = "Number of facilities") + 
   theme_ipsum() 
 ```
+
 South Korea has been expanding government-run child care facilities, but the growth is slow, and privately run centers are declining. Additionally, workplace child care environments have not significantly improved over the past 20 years, resulting in an overall reduction in the total number of facilities.
 
 Observing these trends, paternal leave proportions and child care availability may help identify ways to improve South Korea’s birth rate. These factors can also be used to forecast future birth rates. Current policy aims to add 500 child care facilities annually. However, as paternal leave legislation is determined by individual companies, we can assume that current leave trends will remain unchanged.
 
-After fitting a multi-linear regression model with these trends, the p-value for the total number of healthcare facilities was not significant. Therefore, the model incorporates only the parental leave rates for both women and men as explanatory variables, along with a trend component. The best-fitted linear model, which minimizes the mean squared error (MSE) from cross-validation, is as follows at a 95% confidence level.
+After fitting a multi-linear regression model with these trends, the p-value for the total number of healthcare facilities was not significant at the 95% level. Therefore, the model incorporates only the parental leave rates for both women and men as explanatory variables, along with a trend component. The best-fitted multi-linear regression model, which minimizes the error for rolling forecast origin cross-validation, is as follows.
+
+```{r}
+kr_childcare_ts_reg <- kr_childcare_ts |> 
+  replace_na(list(Count = 0)) |> 
+  mutate(Type = ifelse(Type == "합계", "Total", Type),
+         ) |> 
+  filter(Type == "Total") |> 
+  ungroup() |> 
+  select(Year, Count) |> 
+  as_tsibble(index = Year) |> 
+  filter(Year >= 2013 & Year <= 2022)
+
+kr_pat_leave_ts_reg_fm <- kr_pat_leave_ts |> 
+  filter(Gender == "Female") |> 
+  select(Year, Leave_Rate)
+  
+kr_pat_leave_ts_reg_ml <- kr_pat_leave_ts |> 
+  filter(Gender == "Male")|> 
+  select(Year, Leave_Rate)
+
+newborns_kr_ts_reg <- newborns_kr_ts  |> 
+  select(Year, Total_Fertility_Rate) |> 
+  filter(Year >= 2013 & Year <= 2022)
+
+newborns_kr_ts_reg <- newborns_kr_ts_reg |> 
+  left_join(kr_pat_leave_ts_reg_fm, by = "Year") |> 
+  left_join(kr_pat_leave_ts_reg_ml, by = "Year") |> 
+  left_join(kr_childcare_ts_reg, by = "Year") |> 
+  rename(
+    fm_leave = Leave_Rate.x,
+    ml_leave = Leave_Rate.y,
+    num_fac = Count
+  )
+
+
+fit_birthrate <- newborns_kr_ts_reg |> 
+  model(
+    lm = TSLM(Total_Fertility_Rate ~ fm_leave + ml_leave + num_fac + trend()),
+  ) 
+
+report(fit_birthrate)
+
+
+```
 
 $$
 y_{t} = -1.470668 + 0.052485*leave_{women} + -0.049992*leave_{men} -0.108774*trend + \epsilon_{t}
 $$
+
+\
+We can compare this model to an Moving Average model, which captures lagged values to generate forecasts, the multi-linear model out-performed the MA(2) model with differencing \[ i.e ARIMA(0,1,2) \] in RMSE, MAE, and MAPE.
+
+```{r}
+accuracy(fit_birthrate)
+
+fit_birthrate_arima <- newborns_kr_ts |> 
+  model(
+    ARIMA = ARIMA(Total_Fertility_Rate)
+      )  
+
+accuracy(fit_birthrate_arima)
+
+```
+
 The model suggests that an **increase in maternity leave could positively impact the birth rate**. However, current trends indicate that other factors—captured by the trend-has double the effect, being the largest contributors to the declining birth rate.
 
 To stabilize the birth rate, it is important to set **higher targets for maternity leave percentages**. Using the model, we can generate scenario-based forecasts for South Korea’s birth rate by 2030, considering current trends in paternity leave.
@@ -597,6 +655,7 @@ newborns_kr_ts_reg |>
   theme_ipsum()
   
 ```
+
 ## Conclusion
 
 South Korea’s declining fertility rate is driven by socio-economic and policy factors, particularly inadequate child care support and lower paternal leave rates. Compared to Japan, there is room for improvement in child care and higher paternal leave rates, as it has slowed its birth rate decline. South Korea continues to struggle. A multi-linear model that fits paternal leaves as an explanatory variable suggests that increasing maternity leave to 84.5% by 2023 could improve South Korea’s fertility rate by 20%, reaching approximately 0.51 by 2030. To reverse the trend, South Korea must prioritize enhanced child support policies, especially around child care and parental leave.

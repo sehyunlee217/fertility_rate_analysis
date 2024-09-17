@@ -137,7 +137,7 @@ window.Quarto = {
 
 <section id="declining-global-fertility-rates" class="level2">
 <h2 class="anchored" data-anchor-id="declining-global-fertility-rates">Declining Global Fertility Rates</h2>
-<p>Declining birth rates impacts both developing and developed nations. In poorer countries, while fertility rates are generally higher, birth rates can still drop due to high maternal and infant mortality. Children are often needed for labor and to care for aging parents, and higher fertility is influenced by limited access to contraception and lower female education levels. Social, religious, and economic factors, along with urbanization, also play a role in birth rates. In wealthier nations, lower birth rates are tied to lifestyle choices, where the costs of raising children—such as housing and education—can be a financial burden. Additionally, women in developed countries tend to delay having children due to higher education and professional careers.</p>
+<p>Declining birth rates impacts both developing and developed nations. Social, religious, and economic factors, along with urbanization, play a role in birth rates. In wealthier nations, lower birth rates are tied to lifestyle choices, where the costs of raising children—such as housing and education—can be a financial burden. Additionally, women in developed countries tend to delay having children due to higher education and professional careers.</p>
 </section>
 <section id="declining-crude-birth-rates-in-17-countries-with-advanced-economies" class="level2">
 <h2 class="anchored" data-anchor-id="declining-crude-birth-rates-in-17-countries-with-advanced-economies">Declining Crude birth rates in 17 countries with advanced economies</h2>
@@ -150,7 +150,7 @@ window.Quarto = {
 </div>
 </div>
 </div>
-<p>Declining birth rates are common in advanced economies, but South Korea stands out as an extreme case. It has the fastest declining birth rate and the lowest fertility rate among these nations. This makes South Korea a significant outlier in terms of population trends compared to other countries with similarly advanced economies.</p>
+<p>Declining birth rates are common in advanced economies, but South Korea stands out as an extreme case. It has the fastest declining birth rate and the lowest fertility rate among these nations. This makes South Korea an outlier in terms of population trends compared to other countries with similarly advanced economies.</p>
 </section>
 <section id="declining-birth-rates-a-social-challenge-for-south-korea" class="level2">
 <h2 class="anchored" data-anchor-id="declining-birth-rates-a-social-challenge-for-south-korea">Declining Birth Rates: A Social Challenge for South Korea</h2>
@@ -331,10 +331,49 @@ F-statistic: 658.4 on 1 and 52 DF, p-value: &lt; 2.22e-16</code></pre>
 </div>
 <p>South Korea has been expanding government-run child care facilities, but the growth is slow, and privately run centers are declining. Additionally, workplace child care environments have not significantly improved over the past 20 years, resulting in an overall reduction in the total number of facilities.</p>
 <p>Observing these trends, paternal leave proportions and child care availability may help identify ways to improve South Korea’s birth rate. These factors can also be used to forecast future birth rates. Current policy aims to add 500 child care facilities annually. However, as paternal leave legislation is determined by individual companies, we can assume that current leave trends will remain unchanged.</p>
-<p>After fitting a multi-linear regression model with these trends, the p-value for the total number of healthcare facilities was not significant. Therefore, the model incorporates only the parental leave rates for both women and men as explanatory variables, along with a trend component. The best-fitted linear model, which minimizes the mean squared error (MSE) from cross-validation, is as follows at a 95% confidence level.</p>
+<p>After fitting a multi-linear regression model with these trends, the p-value for the total number of healthcare facilities was not significant at the 95% level. Therefore, the model incorporates only the parental leave rates for both women and men as explanatory variables, along with a trend component. The best-fitted multi-linear regression model, which minimizes the error for rolling forecast origin cross-validation, is as follows.</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>Series: Total_Fertility_Rate 
+Model: TSLM 
+
+Residuals:
+
+Coefficients:
+              Estimate Std. Error t value Pr(&gt;|t|)   
+(Intercept) -8.489e-01  6.987e-01  -1.215  0.27863   
+fm_leave     5.694e-02  9.776e-03   5.825  0.00211 **
+ml_leave    -7.116e-02  2.096e-02  -3.395  0.01935 * 
+num_fac     -1.882e-05  1.534e-05  -1.227  0.27434   
+trend()     -1.296e-01  2.131e-02  -6.084  0.00174 **
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.02221 on 5 degrees of freedom
+Multiple R-squared: 0.9913, Adjusted R-squared: 0.9843
+F-statistic: 142.3 on 4 and 5 DF, p-value: 2.459e-05</code></pre>
+</div>
+</div>
 <p><span class="math display">\[
 y_{t} = -1.470668 + 0.052485*leave_{women} + -0.049992*leave_{men} -0.108774*trend + \epsilon_{t}
-\]</span> The model suggests that an <strong>increase in maternity leave could positively impact the birth rate</strong>. However, current trends indicate that other factors—captured by the trend-has double the effect, being the largest contributors to the declining birth rate.</p>
+\]</span></p>
+<p><br>
+We can compare this model to an Moving Average model, which captures lagged values to generate forecasts, the multi-linear model out-performed the MA(2) model with differencing [ i.e ARIMA(0,1,2) ] in RMSE, MAE, and MAPE.</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 10
+  .model .type           ME   RMSE    MAE     MPE  MAPE  MASE RMSSE   ACF1
+  &lt;chr&gt;  &lt;chr&gt;        &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;
+1 lm     Training -1.17e-17 0.0157 0.0129 -0.0217  1.32 0.226 0.242 -0.432</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 10
+  .model .type        ME  RMSE    MAE   MPE  MAPE  MASE RMSSE    ACF1
+  &lt;chr&gt;  &lt;chr&gt;     &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;
+1 ARIMA  Training 0.0105 0.130 0.0950 0.691  5.35 0.883 0.836 -0.0185</code></pre>
+</div>
+</div>
+<p>The model suggests that an <strong>increase in maternity leave could positively impact the birth rate</strong>. However, current trends indicate that other factors—captured by the trend-has double the effect, being the largest contributors to the declining birth rate.</p>
 <p>To stabilize the birth rate, it is important to set <strong>higher targets for maternity leave percentages</strong>. Using the model, we can generate scenario-based forecasts for South Korea’s birth rate by 2030, considering current trends in paternity leave.</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
@@ -361,7 +400,7 @@ F-statistic: 174.6 on 3 and 6 DF, p-value: 3.1656e-06</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="fertility_rate_analysis_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="fertility_rate_analysis_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -371,7 +410,7 @@ F-statistic: 174.6 on 3 and 6 DF, p-value: 3.1656e-06</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="fertility_rate_analysis_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="fertility_rate_analysis_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
