@@ -619,13 +619,13 @@ fm_leave_trend <- kr_pat_leave_ts_reg_fm |>
   model(
     RW(Leave_Rate ~ drift())
   ) |> 
-  generate(h = 10, bootstrap = TRUE)
+  generate(h = 10)
 
 ml_leave_trend <- kr_pat_leave_ts_reg_ml |> 
   model(
     TSLM(Leave_Rate ~ trend())
   ) |> 
-  generate(h = 10, bootstrap = TRUE)
+  generate(h = 10)
 
 
 fm_leave_trend <- fm_leave_trend |> 
