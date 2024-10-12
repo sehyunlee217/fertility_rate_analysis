@@ -1,6 +1,8 @@
 ## [Live R Quarto Document](https://sehyunlee217.github.io/fertility_rate_analysis/fertility_rate_analysis.html)
 ![Screenshot 2024-09-14 at 20 16 25](https://github.com/user-attachments/assets/819d210c-9a10-4959-94e4-9ce4d873d12e)
 
+## Please click [here](https://sehyunlee217.github.io/fertility_rate_analysis/fertility_rate_analysis.html) to access the Quarto document. 
+
 ## Analysis of South Korea's Fertility / Birth Rate 
 - Investigating the policy-driven factors contributing to South Korea’s declining birth rate, modeling, and producing scenario-based forecasts.
 
